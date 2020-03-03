@@ -71,16 +71,24 @@ let getOperands = (expression, operator) => {
 let normalizeExpr = (expression, searchStr, computation) => {
   let ind = expression.indexOf(searchStr);
 
-  if (computation >= 0 || !ind) {
-    // do nothing
-  } else if (expression[ind - 1] === '-' || (expression[ind - 1] === '(' && expression[ind] === '-')) {
+  if (!ind) {
+    return {normExpr: expression, normComputation: computation};
+  }
+
+  if (computation < 0 && expression[ind - 1] === '-' || (expression[ind - 1] === '(' && expression[ind] === '-')) { // -- / -(-
     computation *= -1;
-    expression = `${expression.substr(0, ind - 1)}+${expression.substr(ind)}`;
-  } else if (expression[ind - 1] === '+') {
-    expression = `${expression.substr(0, ind - 1)}${expression.substr(ind)}`;
+    expression = replaceStringSymbol(expression, ind, '+');
+  } else if (computation < 0 && expression[ind - 1] === '+' || (expression[ind - 1] === '(' && expression[ind] === '+')) { // +- / +(-
+    expression = replaceStringSymbol(expression, ind, '');
+  } else if (computation >= 0 && /[0-9]/.test(expression[ind - 1])) { // 10 - 5 * -2 => 10 + 10
+    expression = replaceStringSymbol(expression, ind, '+');
   }
 
   return {normExpr: expression, normComputation: computation};
+};
+
+let replaceStringSymbol = (str, ind, symbolToPut) => {
+  return `${str.substr(0, ind - 1)}${symbolToPut}${str.substr(ind)}`;
 };
 
 module.exports = {
