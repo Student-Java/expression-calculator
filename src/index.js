@@ -80,8 +80,8 @@ let normalizeExpr = (expression, searchStr, computation) => {
     expression = replaceStringSymbol(expression, ind, '+');
   } else if (computation < 0 && expression[ind - 1] === '+' || (expression[ind - 1] === '(' && expression[ind] === '+')) { // +- / +(-
     expression = replaceStringSymbol(expression, ind, '');
-  } else if (computation >= 0 && /[0-9]/.test(expression[ind - 1])) { // 10 - 5 * -2 => 10 + 10
-    expression = replaceStringSymbol(expression, ind, '+');
+  } else if (computation >= 0 && /[0-9]/.test(expression[ind - 1])) { // 10-5*-2 => 10+10
+    expression = replaceStringSymbol(expression, ind + 1, '+-');
   }
 
   return {normExpr: expression, normComputation: computation};
