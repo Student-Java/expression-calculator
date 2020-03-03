@@ -1,4 +1,4 @@
-const functions = {
+const FUNCTIONS = {
   // precedence matters
   '/': (a, b) => a / b,
   '*': (a, b) => a * b,
@@ -6,10 +6,15 @@ const functions = {
   '+': (a, b) => a + b,
 }
 
-function expressionCalculator(expr) {
-  let number = compute(expr.replace(/\s/g, ''));
+const WHITESPACES_REGEXP = /\s/g;
+const FIRST_DEEPEST_BRACKET_REGEXP = /([(])[^()]+[)]/;
+const CORRESPONDING_BRACKET_REGEXP = /[)]/;
+const OPERAND_REGEXP = '(-?[0-9.]+)';
 
-  if (isNaN(number)) {
+function expressionCalculator(expr) {
+  let number = compute(expr.replace(WHITESPACES_REGEXP, ''));
+
+  if (isNaN(number)) { // it's a dirty trick - don't say to anyone ;)
     throw Error("ExpressionError: Brackets must be paired");
   }
 
@@ -27,9 +32,9 @@ let compute = (expr) => {
 const findDeepestPair = (str, index = null) => {
   let result;
 
-  if (str.match(/([(])[^()]+[)]/)) {
-    let start = str.match(/([(])[^()]+[)]/).index;
-    let end = str.slice(index).match(/[)]/).index;
+  if (str.match(FIRST_DEEPEST_BRACKET_REGEXP)) {
+    let start = str.match(FIRST_DEEPEST_BRACKET_REGEXP).index;
+    let end = str.slice(index).match(CORRESPONDING_BRACKET_REGEXP).index;
     result = {start, end};
   }
 
@@ -39,14 +44,14 @@ const findDeepestPair = (str, index = null) => {
 let computeExpressionRecursively = (expr, dp) => {
   let expression = expr.substr(dp.start + 1, dp.end - dp.start - 1);
   let computation = computeSimpleExpression(expression);
-  expression = `(${expression})`;
-  let {normExpr, normComputation} = normalizeExpr(expr, expression, computation);
-  return compute(normExpr.replace(RegExp(expression.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), normComputation));
+  let expressionStr = `(${expression})`;
+  let {normExpr, normComputation} = normalizeExpr(expr, expressionStr, computation);
+  return compute(normExpr.replace(RegExp(escapeRegExpSymbols(expressionStr), 'g'), normComputation));
 };
 
 const computeSimpleExpression = (expr) => {
-  for (let [operator, func] of Object.entries(functions)) {
-    let regExp = RegExp(`(-?[0-9.]+)\\${operator}(-?[0-9.]+)`, 'g');
+  for (let [operator, func] of Object.entries(FUNCTIONS)) {
+    let regExp = RegExp(`${OPERAND_REGEXP}\\${operator}${OPERAND_REGEXP}`, 'g');
     while (expr.match(regExp)) {
       let matches = expr.match(regExp);
       let expression = matches[0];
@@ -56,7 +61,7 @@ const computeSimpleExpression = (expr) => {
         throw new Error("TypeError: Division by zero.");
       }
       let {normExpr, normComputation} = normalizeExpr(expr, expression, computation);
-      expr = normExpr.replace(RegExp(expression.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), normComputation);
+      expr = normExpr.replace(RegExp(escapeRegExpSymbols(expression), 'g'), normComputation);
     }
   }
 
@@ -87,15 +92,11 @@ let normalizeExpr = (expression, searchStr, computation) => {
   return {normExpr: expression, normComputation: numberToString(computation)};
 };
 
-let replaceStringSymbol = (str, ind, symbolToPut) => {
-  return `${str.substr(0, ind - 1)}${symbolToPut}${str.substr(ind)}`;
-};
+let replaceStringSymbol = (str, ind, symbolToPut) => `${str.substr(0, ind - 1)}${symbolToPut}${str.substr(ind)}`;
 
-let numberToString = (number) =>
-  (+number)
-    .toFixed(100)
-    .replace(/0+$/, '')
-    .replace(/\.$/, '');
+let numberToString = (number) => (+number).toFixed(100).replace(/0+$/, '').replace(/\.$/, '');
+
+let escapeRegExpSymbols = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 module.exports = {
   expressionCalculator
