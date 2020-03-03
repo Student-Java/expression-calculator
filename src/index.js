@@ -72,7 +72,7 @@ let normalizeExpr = (expression, searchStr, computation) => {
   let ind = expression.indexOf(searchStr);
 
   if (!ind) {
-    return {normExpr: expression, normComputation: computation};
+    return {normExpr: expression, normComputation: numberToString(computation)};
   }
 
   if (computation < 0 && expression[ind - 1] === '-' || (expression[ind - 1] === '(' && expression[ind] === '-')) { // -- / -(-
@@ -84,12 +84,18 @@ let normalizeExpr = (expression, searchStr, computation) => {
     expression = replaceStringSymbol(expression, ind + 1, '+-');
   }
 
-  return {normExpr: expression, normComputation: computation};
+  return {normExpr: expression, normComputation: numberToString(computation)};
 };
 
 let replaceStringSymbol = (str, ind, symbolToPut) => {
   return `${str.substr(0, ind - 1)}${symbolToPut}${str.substr(ind)}`;
 };
+
+let numberToString = (number) =>
+  (+number)
+    .toFixed(100)
+    .replace(/0+$/, '')
+    .replace(/\.$/, '');
 
 module.exports = {
   expressionCalculator
