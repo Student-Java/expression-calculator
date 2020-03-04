@@ -18,8 +18,9 @@ const NORMALIZE_REGEXP = new RegExp(`-[0-9.]+[${OPERATORS_TO_NORMALIZE()}]-?[0-9
 const expressionCalculator = (expr) => compute(expr.replace(WHITESPACES_REGEXP, ''));
 
 const compute = (expr) => {
-  return findDeepestPair(expr)
-    ? compute(expr.replace(`(${(findDeepestPair(expr))})`, computeSimpleExpression(findDeepestPair(expr))))
+  let deepestPair = findDeepestPair(expr);
+  return deepestPair
+    ? compute(expr.replace(`(${deepestPair})`, computeSimpleExpression(deepestPair)))
     : computeSimpleExpression(expr);
 };
 
@@ -38,14 +39,17 @@ const findDeepestPair = (expr, index = null) => {
 const computeSimpleExpression = (expr) => {
   for (let [operator, func] of Object.entries(BINARY_OPERATORS)) {
     let regExp = RegExp(`${OPERAND_REGEXP}\\${operator}${OPERAND_REGEXP}`);
-    while (expr.match(regExp)) {
-      let matches = expr.match(regExp);
-      let computation = func(+matches[1], +matches[2]);
+    let matches;
+    while (matches = expr.match(regExp)) {
+      let [expression, a, b] = matches;
+      let computation = func(+a, +b);
+
       if (!isFinite(computation)) {
         throw new Error("TypeError: Division by zero.");
       }
-      let {normExpr, normComputation} = normalizeExpr(expr, matches[0], computation);
-      expr = normExpr.replace(matches[0], normComputation);
+
+      let {normExpr, normComputation} = normalizeExpr(expr, expression, computation);
+      expr = normExpr.replace(expression, normComputation);
     }
   }
 
