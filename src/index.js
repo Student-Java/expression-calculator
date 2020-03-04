@@ -45,7 +45,7 @@ const computeSimpleExpression = (expr) => {
         throw new Error("TypeError: Division by zero.");
       }
       let {normExpr, normComputation} = normalizeExpr(expr, matches[0], computation);
-      expr = normExpr.replace(RegExp(escapeRegExpSymbols(matches[0]), 'g'), normComputation);
+      expr = normExpr.replace(matches[0], normComputation);
     }
   }
 
@@ -55,15 +55,9 @@ const computeSimpleExpression = (expr) => {
 const normalizeExpr = (expression, searchStr, computation) => {
   return {
     normExpr: /[0-9]/.test(expression[expression.indexOf(searchStr) - 1]) ? expression.replace(NORMALIZE_REGEXP, `+${searchStr}`) : expression,
-    normComputation: numberToString(computation)
+    normComputation: computation.toFixed(100).replace(/0+$/, '').replace(/\.$/, '')
   };
 };
-
-const replaceStringSymbol = (str, ind, symbolToPut) => `${str.substr(0, ind - 1)}${symbolToPut}${str.substr(ind)}`;
-
-const numberToString = (number) => (+number).toFixed(100).replace(/0+$/, '').replace(/\.$/, '');
-
-const escapeRegExpSymbols = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 module.exports = {
   expressionCalculator
