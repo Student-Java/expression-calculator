@@ -12,12 +12,14 @@ const WHITESPACES_REGEXP = /\s/g;
 const DEEPEST_PARENTHESES_REGEXP = /\(([^()]*)\)/;
 const HAS_PARENTHESES = /[()]/;
 const OPERAND_REGEXP = '(-?[0-9.]+)';
+const OPERATORS_TO_NORMALIZE = () => Object.keys(BINARY_OPERATORS).filter(op => op !== '-' && op !== '+').join('\\');
+const NORMALIZE_REGEXP = new RegExp(`-[0-9.]+[${OPERATORS_TO_NORMALIZE()}]-?[0-9.]+`);
 
 const expressionCalculator = (expr) => compute(expr.replace(WHITESPACES_REGEXP, ''));
 
 const compute = (expr) => {
   return findDeepestPair(expr)
-    ? computeExpressionRecursively(expr, findDeepestPair(expr))
+    ? compute(expr.replace(`(${(findDeepestPair(expr))})`, computeSimpleExpression(findDeepestPair(expr))))
     : computeSimpleExpression(expr);
 };
 
@@ -31,11 +33,6 @@ const findDeepestPair = (expr, index = null) => {
   }
 
   return expr.match(DEEPEST_PARENTHESES_REGEXP)[1];
-};
-
-const computeExpressionRecursively = (expr, expression) => {
-  let {normExpr, normComputation} = normalizeExpr(expr, `(${expression})`, computeSimpleExpression(expression));
-  return compute(normExpr.replace(`(${expression})`, normComputation));
 };
 
 const computeSimpleExpression = (expr) => {
@@ -56,18 +53,10 @@ const computeSimpleExpression = (expr) => {
 };
 
 const normalizeExpr = (expression, searchStr, computation) => {
-  let ind = expression.indexOf(searchStr);
-
-  if (computation < 0 && expression[ind - 1] === '-' || (expression[ind - 1] === '(' && expression[ind] === '-')) { // -- / -(-
-    computation *= -1;
-    expression = replaceStringSymbol(expression, ind, '+');
-  } else if (computation < 0 && expression[ind - 1] === '+' || (expression[ind - 1] === '(' && expression[ind] === '+')) { // +- / +(-
-    expression = replaceStringSymbol(expression, ind, '');
-  } else if (computation >= 0 && /[0-9]/.test(expression[ind - 1])) { // 10-5*-2 => 10+10
-    expression = replaceStringSymbol(expression, ind + 1, '+-');
-  }
-
-  return {normExpr: expression, normComputation: numberToString(computation)};
+  return {
+    normExpr: /[0-9]/.test(expression[expression.indexOf(searchStr) - 1]) ? expression.replace(NORMALIZE_REGEXP, `+${searchStr}`) : expression,
+    normComputation: numberToString(computation)
+  };
 };
 
 const replaceStringSymbol = (str, ind, symbolToPut) => `${str.substr(0, ind - 1)}${symbolToPut}${str.substr(ind)}`;
