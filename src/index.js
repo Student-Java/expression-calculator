@@ -1,6 +1,11 @@
 const BINARY_OPERATORS = {
   // precedence matters
-  '/': (a, b) => a / b,
+  '/': (a, b) => {
+    if (!b) {
+      throw new Error("TypeError: Division by zero.");
+    }
+    return a / b;
+  },
   '%': (a, b) => a % b,
   '^': (a, b) => a ** b,
   '*': (a, b) => a * b,
@@ -37,22 +42,16 @@ const findDeepestPair = (expr, index = null) => {
 };
 
 const computeSimpleExpression = (expr) => {
-  for (let [operator, func] of Object.entries(BINARY_OPERATORS)) {
+  for (let [operator, binaryFunction] of Object.entries(BINARY_OPERATORS)) {
     let regExp = RegExp(`${OPERAND_REGEXP}\\${operator}${OPERAND_REGEXP}`);
     let matches;
     while (matches = expr.match(regExp)) {
       let [expression, a, b] = matches;
-      let computation = func(+a, +b);
-
-      if (!isFinite(computation)) {
-        throw new Error("TypeError: Division by zero.");
-      }
-
+      let computation = binaryFunction(+a, +b);
       let {normExpr, normComputation} = normalizeExpr(expr, expression, computation);
       expr = normExpr.replace(expression, normComputation);
     }
   }
-
   return Number(expr);
 };
 
